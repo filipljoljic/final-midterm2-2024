@@ -31,6 +31,11 @@
       integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZh3w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
       crossorigin="anonymous"
     ></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+ 
   </head>
   <body>
     <nav class="navbar navbar-inverse navbar-fixed-top">
@@ -157,6 +162,34 @@
         </ul>
       </div>
       <div></div>
+      <div class="row">
+        <div class="col-md-6">   
+            <table id="candidates-table" class="table" style="min-width: 400px; height: 600px; margin: 0 auto">       
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Total Number of Regions</th>
+                        <th>Total Number of Cities</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div> 
+    </div> 
+    <div class="row">
+        <div class="col-md-12">
+            <table id="locations" class="table">
+                <thead>
+                    <tr>
+                        <th>Country</th>
+                        <th>Total Number of Regions</th>
+                        <th>Total Number of Cities</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
     </div>
   </body>
 
@@ -165,14 +198,111 @@
      * Load content from IP2LOCATION.json file
      */
 
+
+     $.getJSON('IP2LOCATION.json', function(data) {
+    console.log(data);
+  });
+
+
     /*TODO #2
      * Use jQuery highcharts library to shows countries and total number of cities in each country
      */
+
+
+     $(document).ready(function() {
+    $.getJSON('IP2LOCATION.json', function(data) {
+        var countries = {};
+        data.forEach(function(item) {
+            if (item.Country !== "-" && item.City !== "-") {
+                if (countries[item.Country]) {
+                    countries[item.Country]++;
+                } else {
+                    countries[item.Country] = 1;
+                }
+            }
+        });
+ 
+        var chartData = Object.keys(countries).map(function(key) {
+            return {
+                name: key,
+                y: countries[key]
+            };
+        });
+
+        
+        $('#candidates-table').highcharts({
+            chart: {
+                type: 'column'
+            },
+            title: {
+                text: 'Total Number of Cities per Country'
+            },
+            xAxis: {
+                type: 'category',
+                title: {
+                    text: 'Country'
+                }
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'Number of Cities'
+                },
+                allowDecimals: false
+            },
+            legend: {
+                enabled: false
+            },
+            series: [{
+                name: 'Cities',
+                colorByPoint: true,
+                data: chartData,
+                showInLegend: true
+            }]
+        });
+    });
+});
 
     /*TODO #3
      * Use jQuery Datatable library to create HTML table with id = locations
      * This table will list all countries with following columns:
      * total number of regions and total number of cities
      */
+
+    
+     $(document).ready(function() {
+        $.getJSON('IP2LOCATION.json', function(data) {
+            var countryData = {};
+
+            data.forEach(function(record) {
+                if (record.Country !== "-" && record.Region !== "-" && record.City !== "-") {
+                    if (!countryData[record.Country]) {
+                        countryData[record.Country] = { regions: new Set(), cities: 0 };
+                    }
+                    countryData[record.Country].regions.add(record.Region);
+                    countryData[record.Country].cities++;
+                }
+            });
+
+            var tableData = Object.keys(countryData).map(function(country) {
+                return [
+                    country,
+                    countryData[country].regions.size,
+                    countryData[country].cities
+                ];
+            });
+
+            $('#locations').DataTable({
+                data: tableData,
+                columns: [
+                    { title: "Country" },
+                    { title: "Total Number of Regions" },
+                    { title: "Total Number of Cities" }
+                ]
+            });
+        });
+    });
+
+
   </script>
 </html>
